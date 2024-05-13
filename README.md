@@ -11,7 +11,7 @@
 ## Contents
 - [Install](#install)
 - [Evaluation](#evaluation)
-- [Evaluating Custom Models](#something)
+
 
 
 ## Install
@@ -25,9 +25,21 @@ pip install -r requirements.txt
 
 All of the models from the paper are available (GPT-4/3.5, Mixtral-8x7B, Llama-70B-chat). You can try them for any of the agents, make sure you have either an OpenAI or Replicate key ready for evaluation! We will be adding huggingface wrappers in the next few days.
 
+Just change modify the following parameters in agentclinic.py
 
+```
+    inf_type = "llm" # llm | human_doctor | human_patient
+    doctor_bias = None # see DoctorAgent generate_bias()
+    patient_bias = None # see PatientAgent generate_bias()
+    doctor_llm = "gpt4" # gpt4 | gpt3.5 | llama-2-70b-chat | mixtral-8x7b
+    patient_llm = "gpt4" # gpt4 | gpt3.5 | mixtral-8x7b
+```
 
+And then run it!
 
+```
+python agentclinic.py
+```
 
 
 
