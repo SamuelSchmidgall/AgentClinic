@@ -25,20 +25,25 @@ pip install -r requirements.txt
 
 All of the models from the paper are available (GPT-4/3.5, Mixtral-8x7B, Llama-70B-chat). You can try them for any of the agents, make sure you have either an OpenAI or Replicate key ready for evaluation! We will be adding huggingface wrappers in the next few days.
 
-Just change modify the following parameters in agentclinic.py
+Just change modify the following parameters in the CLI
 
 ```
-    inf_type = "llm" # llm | human_doctor | human_patient
-    doctor_bias = None # see DoctorAgent generate_bias()
-    patient_bias = None # see PatientAgent generate_bias()
-    doctor_llm = "gpt4" # gpt4 | gpt3.5 | llama-2-70b-chat | mixtral-8x7b
-    patient_llm = "gpt4" # gpt4 | gpt3.5 | mixtral-8x7b
+    parser.add_argument('--openai_api_key', type=str, required=True, help='OpenAI API Key')
+    parser.add_argument('--replicate_api_key', type=str, required=False, help='Replicate API Key')
+    parser.add_argument('--inf_type', type=str, choices=['llm', 'human_doctor', 'human_patient'], default='llm')
+    parser.add_argument('--doctor_bias', type=str, help='Doctor bias type', default='None')
+    parser.add_argument('--patient_bias', type=str, help='Patient bias type', default='None')
+    parser.add_argument('--doctor_llm', type=str, default='gpt4', choices=['gpt4', 'gpt3.5', 'llama-2-70b-chat', 'mixtral-8x7b'])
+    parser.add_argument('--patient_llm', type=str, default='gpt4', choices=['gpt4', 'gpt3.5', 'mixtral-8x7b'])
+    parser.add_argument('--measurement_llm', type=str, default='gpt4', choices=['gpt4'])
+    parser.add_argument('--moderator_llm', type=str, default='gpt4', choices=['gpt4'])
+    parser.add_argument('--num_scenarios', type=int, default=1, required=False, help='Number of scenarios to simulate')
 ```
 
 And then run it!
 
 ```
-python agentclinic.py
+python3 agentclinic.py --openai_api_key "API_KEY_HERE" --inf_type "llm"
 ```
 
 
