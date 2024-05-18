@@ -5,6 +5,7 @@
 </p>
 
 ## Release
+- [05/17/2024] We release new results and support for GPT-4o!
 - [05/13/2024] 🔥 We release **AgentClinic: a multimodal agent benchmark to evaluate AI in simulated clinical environment**. We propose a multimodal benchmark based on language agents which simulate the clinical environment.  Checkout the [paper](media/AgentClinicPaper.pdf) and the [website](https://agentclinic.github.io/) for this code.
 
 
