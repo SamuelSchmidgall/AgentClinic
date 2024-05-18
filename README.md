@@ -12,6 +12,7 @@
 ## Contents
 - [Install](#install)
 - [Evaluation](#evaluation)
+- [Code Examples](#code-examples)
 
 
 
@@ -40,6 +41,9 @@ parser.add_argument('--measurement_llm', type=str, default='gpt4', choices=['gpt
 parser.add_argument('--moderator_llm', type=str, default='gpt4', choices=['gpt4'])
 parser.add_argument('--num_scenarios', type=int, default=1, required=False, help='Number of scenarios to simulate')
 ```
+
+
+## Code Examples
 
 🎆 And then run it!
 
