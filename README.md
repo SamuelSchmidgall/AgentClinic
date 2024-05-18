@@ -54,6 +54,9 @@ python3 agentclinic.py --openai_api_key "YOUR_OPENAIAPI_KEY" --doctor_llm "gpt4o
 ```
 
 
+<p align="center">
+  <img src="media/perfplots.png" alt="Demonstration of the flow of AgentClinic" style="width: 99%;">
+</p>
 
 
 
