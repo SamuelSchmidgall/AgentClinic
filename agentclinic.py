@@ -1,8 +1,19 @@
+iimport argparse
+from transformers import pipeline
 import openai, re, random, time, json, replicate, os
 
 llama_url = "meta/llama-2-70b-chat"
 mixtral_url = "mistralai/mixtral-8x7b-instruct-v0.1"
 
+def load_huggingface_model(model_name):
+    pipe = pipeline("text-generation", model=model_name, device_map="auto")
+    return pipe
+
+def inference_huggingface(prompt, pipe):
+    response = pipe(prompt, max_new_tokens=100)[0]["generated_text"]
+    response = response.replace(prompt, "")
+    print(response)
+    return response
 
 class Scenario:
     def __init__(self, scenario_dict) -> None:
@@ -26,6 +37,7 @@ class Scenario:
     
     def diagnosis_information(self) -> dict:
         return self.diagnosis
+
 
 class ScenarioLoader:
     def __init__(self) -> None:
@@ -57,6 +69,7 @@ class PatientAgent:
         # sample initial question from dataset
         self.scenario = scenario
         self.reset()
+        self.pipe = None
 
         self.biases = ["recency", "frequency", "false_consensus", "self_diagnosis", "gender", "race", "sexual_orientation", "cultural", "education", "religion", "socioeconomic"]
 
@@ -106,22 +119,20 @@ class PatientAgent:
                     messages=messages,
                     temperature=0.05,)
             answer = response["choices"][0]["message"]["content"]
-            
         elif self.backend == "gpt3.5":
             messages = [
                 {"role": "system", "content": self.system_prompt()},
-                {"role": "user", "content": "\nHere is a history of your dialogue: " + self.agent_hist + "\n Here was the patient response: " + question + "Now please continue your dialogue\nDoctor: "}
+                {"role": "user", "content": "\nHere is a history of your dialogue: " + self.agent_hist + "\n Here was the doctor response: " + question + "Now please continue your dialogue\nPatient: "}
             ]
             response = openai.ChatCompletion.create(
                     model="gpt-3.5-turbo",
                     messages=messages,
                     temperature=0.05,)
             answer = response["choices"][0]["message"]["content"]
-            
         elif self.backend == "gpt4o":
             messages = [
                 {"role": "system", "content": self.system_prompt()},
-                {"role": "user", "content": "\nHere is a history of your dialogue: " + self.agent_hist + "\n Here was the patient response: " + question + "Now please continue your dialogue\nDoctor: "}
+                {"role": "user", "content": "\nHere is a history of your dialogue: " + self.agent_hist + "\n Here was the doctor response: " + question + "Now please continue your dialogue\nPatient: "}
             ]
             response = openai.ChatCompletion.create(
                     model="gpt-4o",
@@ -129,7 +140,6 @@ class PatientAgent:
                     temperature=0.05,
                 )
             answer = response["choices"][0]["message"]["content"]
-            
         elif self.backend == 'mixtral-8x7b':
             prompt = "\nHere is a history of your dialogue: " + self.agent_hist + "\n Here was the doctor response: " + question + "Now please continue your dialogue\nPatient: "
             output = replicate.run(
@@ -138,7 +148,13 @@ class PatientAgent:
                        "system_prompt": self.system_prompt(),
                        "max_new_tokens": 75})
             answer = ''.join(output)
-            
+        elif "HF_" in self.backend:
+            input_text = self.system_prompt() + "\nHere is a history of your dialogue: " + self.agent_hist + "\n Here was the doctor response: " + question + "Now please continue your dialogue\nPatient: " 
+            if self.pipe is None:
+                self.pipe = load_huggingface_model(self.backend.replace("HF_", ""))
+            answer = inference_huggingface(input_text, self.pipe)
+        else:
+            raise Exception("No model by the name {}".format(self.backend))
         
         self.agent_hist += question + "\n\n" + answer + "\n\n"
         return answer
@@ -176,6 +192,7 @@ class DoctorAgent:
         # prepare initial conditions for LLM
         self.scenario = scenario
         self.reset()
+        self.pipe = None
         self.biases = ["recency", "frequency", "false_consensus", "confirmation", "status_quo", "gender", "race", "sexual_orientation", "cultural", "education", "religion", "socioeconomic"]
 
     def generate_bias(self) -> str:
@@ -272,7 +289,11 @@ class DoctorAgent:
                        "system_prompt": self.system_prompt(),
                        "max_new_tokens": 75})
             answer = ''.join(output)
-            
+        elif "HF_" in self.backend:
+            input_text = self.system_prompt() + "\nHere is a history of your dialogue: " + self.agent_hist + "\n Here was the patient response: " + question + "Now please continue your dialogue\nDoctor: "
+            if self.pipe is None:
+                self.pipe = load_huggingface_model(self.backend.replace("HF_", ""))
+            answer = inference_huggingface(input_text, self.pipe)
         else:
             raise Exception("No model by the name {}".format(self.backend))
         
@@ -293,7 +314,7 @@ class DoctorAgent:
         self.presentation = self.scenario.examiner_information()
 
 
-class InstrumentAgent:
+class MeasurementAgent:
     def __init__(self, scenario, backend_str="gpt4") -> None:
         # conversation history between doctor and patient
         self.agent_hist = ""
@@ -303,14 +324,15 @@ class InstrumentAgent:
         self.backend = backend_str
         # prepare initial conditions for LLM
         self.scenario = scenario
+        self.pipe = None
         self.reset()
 
-    def inference_instrument(self, question) -> str:
+    def inference_measurement(self, question) -> str:
         answer = str()
         if self.backend == "gpt4":
             messages = [
                 {"role": "system", "content": self.system_prompt()},
-                {"role": "user", "content": "\nHere is a history of the dialogue: " + self.agent_hist + "\n Here was the doctor instrument request: " + question}
+                {"role": "user", "content": "\nHere is a history of the dialogue: " + self.agent_hist + "\n Here was the doctor measurement request: " + question}
             ]
             response = openai.ChatCompletion.create(
                     model="gpt-4-turbo-preview",
@@ -318,12 +340,19 @@ class InstrumentAgent:
                     temperature=0.05,
                 )
             answer = response["choices"][0]["message"]["content"]
-            
+        elif "HF_" in self.backend:
+            input_text = self.system_prompt() + "\nHere is a history of the dialogue: " + self.agent_hist + "\n Here was the doctor measurement request: " + question
+            if self.pipe is None:
+                self.pipe = load_huggingface_model(self.backend.replace("HF_", ""))
+            answer = inference_huggingface(input_text, self.pipe)
+        else:
+            raise Exception("No model by the name {}".format(self.backend))
+        
         self.agent_hist += question + "\n\n" + answer + "\n\n"
         return answer
 
     def system_prompt(self) -> str:
-        base = "You are an instrument reader who responds with medical test results. Please respond in the format \"RESULTS: [results here]\""
+        base = "You are an measurement reader who responds with medical test results. Please respond in the format \"RESULTS: [results here]\""
         presentation = "\n\nBelow is all of the information you have. {}. \n\n If the requested results are not in your data then you can respond with NORMAL READINGS.".format(self.information)
         return base + presentation
     
@@ -335,26 +364,25 @@ class InstrumentAgent:
         self.information = self.scenario.exam_information()
 
 
-def compare_results(diagnosis, correct_diagnosis, moderator_llm):
-    messages = [
-        {"role": "system", "content": "You are responsible for determining if the corrent diagnosis and the doctor diagnosis are the same disease. Please respond only with Yes or No. Nothing else."},
-        {"role": "user", "content": "\nHere is the correct diagnosis: " + correct_diagnosis + "\n Here was the doctor dialogue: " + diagnosis + "\nAre these the same?"}
-    ]
-    response = openai.ChatCompletion.create(
-            model="gpt-4-turbo-preview",
-            messages=messages,
-            temperature=0.0,)
-    answer = response["choices"][0]["message"]["content"]
-    
+def compare_results(diagnosis, correct_diagnosis, moderator_llm, mod_pipe):
+    if moderator_llm == "gpt4":
+        messages = [
+            {"role": "system", "content": "You are responsible for determining if the corrent diagnosis and the doctor diagnosis are the same disease. Please respond only with Yes or No. Nothing else."},
+            {"role": "user", "content": "\nHere is the correct diagnosis: " + correct_diagnosis + "\n Here was the doctor dialogue: " + diagnosis + "\nAre these the same?"}
+        ]
+        response = openai.ChatCompletion.create(
+                model="gpt-4-turbo-preview",
+                messages=messages,
+                temperature=0.0,)
+        answer = response["choices"][0]["message"]["content"]
+    elif "HF_" in moderator_llm:
+        input_text = "You are responsible for determining if the corrent diagnosis and the doctor diagnosis are the same disease. Please respond only with Yes or No. Nothing else." + "\nHere is the correct diagnosis: " + correct_diagnosis + "\n Here was the doctor dialogue: " + diagnosis + "\nAre these the same?"
+        answer = inference_huggingface(input_text, mod_pipe)
+    else:
+        raise Exception("No model by the name {}".format(moderator_llm))
+        
     return answer.lower()
 
-
-import openai, re, random, time, json, replicate, os, argparse
-
-llama_url = "meta/llama-2-70b-chat"
-mixtral_url = "mistralai/mixtral-8x7b-instruct-v0.1"
-
-# Class definitions remain unchanged...
 
 def main(api_key, replicate_api_key, inf_type, doctor_bias, patient_bias, doctor_llm, patient_llm, measurement_llm, moderator_llm, num_scenarios):
     openai.api_key = api_key
@@ -365,11 +393,16 @@ def main(api_key, replicate_api_key, inf_type, doctor_bias, patient_bias, doctor
     total_correct = 0
     total_presents = 0
 
+    if "HF_" in moderator_llm:
+        pipe = load_huggingface_model(moderator_llm.replace("HF_", ""))
+    else:
+        pipe = None
+
     for _scenario_id in range(0, min(num_scenarios, scenario_loader.num_scenarios)):
         total_presents += 1
         pi_dialogue = str()
         scenario =  scenario_loader.get_scenario(id=_scenario_id)
-        instr_agent = InstrumentAgent(
+        meas_agent = MeasurementAgent(
             scenario=scenario,
             backend_str=measurement_llm)
         patient_agent = PatientAgent(
@@ -390,15 +423,15 @@ def main(api_key, replicate_api_key, inf_type, doctor_bias, patient_bias, doctor
             print("Doctor [{}%]:".format(int(((_inf_id+1)/20)*100)), doctor_dialogue)
 
             if "DIAGNOSIS READY" in doctor_dialogue:
-                correctness = compare_results(doctor_dialogue, scenario.diagnosis_information(), moderator_llm) == "yes"
+                correctness = compare_results(doctor_dialogue, scenario.diagnosis_information(), moderator_llm, pipe) == "yes"
                 if correctness: total_correct += 1
                 print("\nCorrect answer:", scenario.diagnosis_information())
                 print("Scene {}, The diagnosis was ".format(_scenario_id), "CORRECT" if correctness else "INCORRECT", int((total_correct/total_presents)*100))
                 break
 
             if "REQUEST TEST" in doctor_dialogue:
-                pi_dialogue = instr_agent.inference_instrument(doctor_dialogue)
-                print("Instrument [{}%]:".format(int(((_inf_id+1)/20)*100)), pi_dialogue)
+                pi_dialogue = meas_agent.inference_measurement(doctor_dialogue,)
+                print("Measurement [{}%]:".format(int(((_inf_id+1)/20)*100)), pi_dialogue)
                 patient_agent.add_hist(pi_dialogue)
             else:
                 if inf_type == "human_patient":
@@ -406,25 +439,23 @@ def main(api_key, replicate_api_key, inf_type, doctor_bias, patient_bias, doctor
                 else:
                     pi_dialogue = patient_agent.inference_patient(doctor_dialogue)
                 print("Patient [{}%]:".format(int(((_inf_id+1)/20)*100)), pi_dialogue)
-                instr_agent.add_hist(pi_dialogue)
+                meas_agent.add_hist(pi_dialogue)
             # Prevent API timeouts
             time.sleep(1.0)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Medical Diagnosis Simulation CLI')
-    parser.add_argument('--openai_api_key', type=str, required=True, help='OpenAI API Key')
+    parser.add_argument('--openai_api_key', type=str, required=False, help='OpenAI API Key')
     parser.add_argument('--replicate_api_key', type=str, required=False, help='Replicate API Key')
     parser.add_argument('--inf_type', type=str, choices=['llm', 'human_doctor', 'human_patient'], default='llm')
     parser.add_argument('--doctor_bias', type=str, help='Doctor bias type', default='None', choices=["recency", "frequency", "false_consensus", "confirmation", "status_quo", "gender", "race", "sexual_orientation", "cultural", "education", "religion", "socioeconomic"])
     parser.add_argument('--patient_bias', type=str, help='Patient bias type', default='None', choices=["recency", "frequency", "false_consensus", "self_diagnosis", "gender", "race", "sexual_orientation", "cultural", "education", "religion", "socioeconomic"])
-    parser.add_argument('--doctor_llm', type=str, default='gpt4', choices=['gpt4', 'gpt3.5', 'llama-2-70b-chat', 'mixtral-8x7b', "gpt4o"])
-    parser.add_argument('--patient_llm', type=str, default='gpt4', choices=['gpt4', 'gpt3.5', 'mixtral-8x7b', "gpt4o"])
-    parser.add_argument('--measurement_llm', type=str, default='gpt4', choices=['gpt4'])
-    parser.add_argument('--moderator_llm', type=str, default='gpt4', choices=['gpt4'])
+    parser.add_argument('--doctor_llm', type=str, default='gpt4')
+    parser.add_argument('--patient_llm', type=str, default='gpt4')
+    parser.add_argument('--measurement_llm', type=str, default='gpt4')
+    parser.add_argument('--moderator_llm', type=str, default='gpt4')
     parser.add_argument('--num_scenarios', type=int, default=1, required=False, help='Number of scenarios to simulate')
     args = parser.parse_args()
 
     main(args.openai_api_key, args.replicate_api_key, args.inf_type, args.doctor_bias, args.patient_bias, args.doctor_llm, args.patient_llm, args.measurement_llm, args.moderator_llm, args.num_scenarios)
-
-
 

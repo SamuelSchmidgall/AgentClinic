@@ -5,6 +5,7 @@
 </p>
 
 ## Release
+- [05/18/2024] 🤗 We added support for HuggingFace models!
 - [05/17/2024] We release new results and support for GPT-4o!
 - [05/13/2024] 🔥 We release **AgentClinic: a multimodal agent benchmark to evaluate AI in simulated clinical environment**. We propose a multimodal benchmark based on language agents which simulate the clinical environment.  Checkout the [paper](media/AgentClinicPaper.pdf) and the [website](https://agentclinic.github.io/) for this code.
 
@@ -25,7 +26,7 @@ pip install -r requirements.txt
 
 ## Evaluation
 
-All of the models from the paper are available (GPT-4/3.5, Mixtral-8x7B, Llama-70B-chat). You can try them for any of the agents, make sure you have either an OpenAI or Replicate key ready for evaluation! We will be adding huggingface wrappers in the next few days.
+All of the models from the paper are available (GPT-4/4o/3.5, Mixtral-8x7B, Llama-70B-chat). You can try them for any of the agents, make sure you have either an OpenAI or Replicate key ready for evaluation! We will be adding huggingface wrappers in the next few days.
 
 Just change modify the following parameters in the CLI
 
@@ -48,7 +49,15 @@ parser.add_argument('--num_scenarios', type=int, default=1, required=False, help
 🎆 And then run it!
 
 ```
-python3 agentclinic.py --openai_api_key "API_KEY_HERE" --inf_type "llm"
+python3 agentclinic.py --openai_api_key "YOUR_OPENAIAPI_KEY" --inf_type "llm"
+```
+
+🤗 You can also try ANY custom HuggingFace language model very simply! All you have to do is pass "HF_{hf_path}" where hf_path is the HuggingFace path (e.g. mistralai/Mixtral-8x7B-v0.1). Here is how you can run Mixtral-8x7B locally with AgentClinic for both doctor and patient agents. 🤗
+
+⚠️ Can be quite slow ⚠️
+
+```
+python3 agentclinic.py --inf_type "llm" --inf_type "llm" --patient_llm "HF_mistralai/Mixtral-8x7B-v0.1"  --moderator_llm "HF_mistralai/Mixtral-8x7B-v0.1"  --doctor_llm "HF_mistralai/Mixtral-8x7B-v0.1"  --measurement_llm "HF_mistralai/Mixtral-8x7B-v0.1"
 ```
 
 🔥 Here is an example with gpt-4o!
