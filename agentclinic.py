@@ -106,8 +106,7 @@ class PatientAgent:
                     messages=messages,
                     temperature=0.05,)
             answer = response["choices"][0]["message"]["content"]
-            answer = re.sub("\s+", " ", answer)
-        
+            
         elif self.backend == "gpt3.5":
             messages = [
                 {"role": "system", "content": self.system_prompt()},
@@ -118,7 +117,19 @@ class PatientAgent:
                     messages=messages,
                     temperature=0.05,)
             answer = response["choices"][0]["message"]["content"]
-            answer = re.sub("\s+", " ", answer)
+            
+        elif self.backend == "gpt4o":
+            messages = [
+                {"role": "system", "content": self.system_prompt()},
+                {"role": "user", "content": "\nHere is a history of your dialogue: " + self.agent_hist + "\n Here was the patient response: " + question + "Now please continue your dialogue\nDoctor: "}
+            ]
+            response = openai.ChatCompletion.create(
+                    model="gpt-4o",
+                    messages=messages,
+                    temperature=0.05,
+                )
+            answer = response["choices"][0]["message"]["content"]
+            
         elif self.backend == 'mixtral-8x7b':
             prompt = "\nHere is a history of your dialogue: " + self.agent_hist + "\n Here was the doctor response: " + question + "Now please continue your dialogue\nPatient: "
             output = replicate.run(
@@ -127,7 +138,7 @@ class PatientAgent:
                        "system_prompt": self.system_prompt(),
                        "max_new_tokens": 75})
             answer = ''.join(output)
-            answer = re.sub("\s+", " ", answer)
+            
         
         self.agent_hist += question + "\n\n" + answer + "\n\n"
         return answer
@@ -217,7 +228,7 @@ class DoctorAgent:
                     temperature=0.05,
                 )
             answer = response["choices"][0]["message"]["content"]
-            answer = re.sub("\s+", " ", answer)
+            
         elif self.backend == "gpt3.5":
             messages = [
                 {"role": "system", "content": self.system_prompt()},
@@ -229,7 +240,19 @@ class DoctorAgent:
                     temperature=0.05,
                 )
             answer = response["choices"][0]["message"]["content"]
-            answer = re.sub("\s+", " ", answer)
+            
+        elif self.backend == "gpt4o":
+            messages = [
+                {"role": "system", "content": self.system_prompt()},
+                {"role": "user", "content": "\nHere is a history of your dialogue: " + self.agent_hist + "\n Here was the patient response: " + question + "Now please continue your dialogue\nDoctor: "}
+            ]
+            response = openai.ChatCompletion.create(
+                    model="gpt-4o",
+                    messages=messages,
+                    temperature=0.05,
+                )
+            answer = response["choices"][0]["message"]["content"]
+            
         elif self.backend == 'llama-2-70b-chat':
             prompt = "\nHere is a history of your dialogue: " + self.agent_hist + "\n Here was the patient response: " + question + "Now please continue your dialogue\nDoctor: "
             prompt = prompt[:] # token limit
@@ -240,7 +263,7 @@ class DoctorAgent:
                     "system_prompt": self.system_prompt(),
                     "max_new_tokens": 150})
             answer = ''.join(output)
-            answer = re.sub("\s+", " ", answer)
+            
         elif self.backend == 'mixtral-8x7b':
             prompt = "\nHere is a history of your dialogue: " + self.agent_hist + "\n Here was the patient response: " + question + "Now please continue your dialogue\nDoctor: "
             output = replicate.run(
@@ -249,7 +272,7 @@ class DoctorAgent:
                        "system_prompt": self.system_prompt(),
                        "max_new_tokens": 75})
             answer = ''.join(output)
-            answer = re.sub("\s+", " ", answer)
+            
         else:
             raise Exception("No model by the name {}".format(self.backend))
         
@@ -295,7 +318,7 @@ class InstrumentAgent:
                     temperature=0.05,
                 )
             answer = response["choices"][0]["message"]["content"]
-            answer = re.sub("\s+", " ", answer)
+            
         self.agent_hist += question + "\n\n" + answer + "\n\n"
         return answer
 
@@ -322,7 +345,7 @@ def compare_results(diagnosis, correct_diagnosis, moderator_llm):
             messages=messages,
             temperature=0.0,)
     answer = response["choices"][0]["message"]["content"]
-    answer = re.sub("\s+", " ", answer)
+    
     return answer.lower()
 
 
@@ -394,8 +417,8 @@ if __name__ == "__main__":
     parser.add_argument('--inf_type', type=str, choices=['llm', 'human_doctor', 'human_patient'], default='llm')
     parser.add_argument('--doctor_bias', type=str, help='Doctor bias type', default='None')
     parser.add_argument('--patient_bias', type=str, help='Patient bias type', default='None')
-    parser.add_argument('--doctor_llm', type=str, default='gpt4', choices=['gpt4', 'gpt3.5', 'llama-2-70b-chat', 'mixtral-8x7b'])
-    parser.add_argument('--patient_llm', type=str, default='gpt4', choices=['gpt4', 'gpt3.5', 'mixtral-8x7b'])
+    parser.add_argument('--doctor_llm', type=str, default='gpt4', choices=['gpt4', 'gpt3.5', 'llama-2-70b-chat', 'mixtral-8x7b', "gpt4o"])
+    parser.add_argument('--patient_llm', type=str, default='gpt4', choices=['gpt4', 'gpt3.5', 'mixtral-8x7b', "gpt4o"])
     parser.add_argument('--measurement_llm', type=str, default='gpt4', choices=['gpt4'])
     parser.add_argument('--moderator_llm', type=str, default='gpt4', choices=['gpt4'])
     parser.add_argument('--num_scenarios', type=int, default=1, required=False, help='Number of scenarios to simulate')
