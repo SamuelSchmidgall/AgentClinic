@@ -1,7 +1,7 @@
 # AgentClinic: a multimodal agent benchmark to evaluate AI in simulated clinical environments
 
 <p align="center">
-  <img src="media/mainfigure.png" alt="Demonstration of the flow of AgentClinic" style="width: 80%;">
+  <img src="media/mainfigure.png" alt="Demonstration of the flow of AgentClinic" style="width: 99%;">
 </p>
 
 ## Release
@@ -47,7 +47,7 @@ And then run it!
 python3 agentclinic.py --openai_api_key "API_KEY_HERE" --inf_type "llm"
 ```
 
-Here is an example with gpt-4o!
+🔥 Here is an example with gpt-4o!
 
 ```
 python3 agentclinic.py --openai_api_key "YOUR_OPENAIAPI_KEY" --doctor_llm "gpt4o" --patient_llm "gpt4o" --inf_type "llm"
