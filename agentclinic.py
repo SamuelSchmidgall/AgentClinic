@@ -1,4 +1,4 @@
-iimport argparse
+import argparse
 from transformers import pipeline
 import openai, re, random, time, json, replicate, os
 
@@ -12,7 +12,6 @@ def load_huggingface_model(model_name):
 def inference_huggingface(prompt, pipe):
     response = pipe(prompt, max_new_tokens=100)[0]["generated_text"]
     response = response.replace(prompt, "")
-    print(response)
     return response
 
 class Scenario:
