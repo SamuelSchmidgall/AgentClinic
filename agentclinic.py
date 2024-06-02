@@ -176,15 +176,15 @@ class PatientAgent:
 
 class DoctorAgent:
     def __init__(self, scenario, backend_str="gpt4", max_infs=20, bias_present=None) -> None:
-        # number of inference calls to the patient
+        # number of inference calls to the doctor
         self.infs = 0
-        # maximum number of inference calls to the patient
+        # maximum number of inference calls to the doctor
         self.MAX_INFS = max_infs
         # conversation history between doctor and patient
         self.agent_hist = ""
-        # presentation information for patient
+        # presentation information for doctor
         self.presentation = ""
-        # language model backend for patient agent
+        # language model backend for doctor agent
         self.backend = backend_str
         # presentation of any form of bias
         self.bias_present = (None if bias_present == "None" else bias_present)
@@ -317,9 +317,9 @@ class MeasurementAgent:
     def __init__(self, scenario, backend_str="gpt4") -> None:
         # conversation history between doctor and patient
         self.agent_hist = ""
-        # presentation information for patient
+        # presentation information for measurement 
         self.presentation = ""
-        # language model backend for patient agent
+        # language model backend for measurement agent
         self.backend = backend_str
         # prepare initial conditions for LLM
         self.scenario = scenario
