@@ -26,7 +26,7 @@ pip install -r requirements.txt
 
 ## Evaluation
 
-All of the models from the paper are available (GPT-4/4o/3.5, Mixtral-8x7B, Llama-70B-chat). You can try them for any of the agents, make sure you have either an OpenAI or Replicate key ready for evaluation! We will be adding huggingface wrappers in the next few days.
+All of the models from the paper are available (GPT-4/4o/3.5, Mixtral-8x7B, Llama-70B-chat). You can try them for any of the agents, make sure you have either an OpenAI or Replicate key ready for evaluation! HuggingFace wrappers are also implemented if you don't want to use API keys.
 
 Just change modify the following parameters in the CLI
 
