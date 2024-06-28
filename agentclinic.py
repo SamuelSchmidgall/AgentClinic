@@ -14,7 +14,8 @@ def inference_huggingface(prompt, pipe):
     response = response.replace(prompt, "")
     return response
 
-class Scenario:
+
+class ScenarioMedQA:
     def __init__(self, scenario_dict) -> None:
         self.scenario_dict = scenario_dict
         self.tests = scenario_dict["OSCE_Examination"]["Test_Results"]
@@ -38,20 +39,60 @@ class Scenario:
         return self.diagnosis
 
 
-class ScenarioLoader:
+class ScenarioLoaderMedQA:
     def __init__(self) -> None:
         with open("agentclinic_medqa.jsonl", "r") as f:
             self.scenario_strs = [json.loads(line) for line in f]
-        self.scenarios = [Scenario(_str) for _str in self.scenario_strs]
+        self.scenarios = [ScenarioMedQA(_str) for _str in self.scenario_strs]
         self.num_scenarios = len(self.scenarios)
     
-    def sample_scenario(self) -> Scenario:
+    def sample_scenario(self):
         return self.scenarios[random.randint(0, len(self.scenarios)-1)]
     
-    def get_scenario(self, id) -> Scenario:
+    def get_scenario(self, id):
         if id is None: return self.sample_scenario()
         return self.scenarios[id]
         
+
+class ScenarioNEJM:
+    def __init__(self, scenario_dict) -> None:
+        self.scenario_dict = scenario_dict 
+        self.question = scenario_dict["question"] 
+        self.image_url = scenario_dict["image_url"] 
+        self.diagnosis = [_sd["text"] 
+            for _sd in scenario_dict["answers"] if _sd["correct"]][0]
+        self.patient_info = scenario_dict["patient_info"]
+        self.physical_exams = scenario_dict["physical_exams"]
+
+    def patient_information(self) -> str:
+        patient_info = self.patient_info
+        return patient_info
+
+    def examiner_information(self) -> str:
+        return "What is the most likely diagnosis?"
+    
+    def exam_information(self) -> str:
+        exams = self.physical_exams
+        return exams
+    
+    def diagnosis_information(self) -> str:
+        return self.diagnosis
+
+
+class ScenarioLoaderNEJM:
+    def __init__(self) -> None:
+        with open("agentclinic_nejm.jsonl", "r") as f:
+            self.scenario_strs = [json.loads(line) for line in f]
+        self.scenarios = [ScenarioNEJM(_str) for _str in self.scenario_strs[:15]]
+        self.num_scenarios = len(self.scenarios)
+    
+    def sample_scenario(self):
+        return self.scenarios[random.randint(0, len(self.scenarios)-1)]
+    
+    def get_scenario(self, id):
+        if id is None: return self.sample_scenario()
+        return self.scenarios[id]
+
 
 class PatientAgent:
     def __init__(self, scenario, backend_str="gpt4", bias_present=None) -> None:
@@ -175,7 +216,7 @@ class PatientAgent:
 
 
 class DoctorAgent:
-    def __init__(self, scenario, backend_str="gpt4", max_infs=20, bias_present=None) -> None:
+    def __init__(self, scenario, backend_str="gpt4", max_infs=20, bias_present=None, img_request=False) -> None:
         # number of inference calls to the doctor
         self.infs = 0
         # maximum number of inference calls to the doctor
@@ -192,6 +233,7 @@ class DoctorAgent:
         self.scenario = scenario
         self.reset()
         self.pipe = None
+        self.img_request = img_request
         self.biases = ["recency", "frequency", "false_consensus", "confirmation", "status_quo", "gender", "race", "sexual_orientation", "cultural", "education", "religion", "socioeconomic"]
 
     def generate_bias(self) -> str:
@@ -230,7 +272,7 @@ class DoctorAgent:
             print("BIAS TYPE {} NOT SUPPORTED, ignoring bias...".format(self.bias_present))
         return ""
 
-    def inference_doctor(self, question) -> str:
+    def inference_doctor(self, question, image_requested=False) -> str:
         answer = str()
         if self.infs >= self.MAX_INFS: return "Maximum inferences reached"
         if self.backend == "gpt4":
@@ -244,7 +286,6 @@ class DoctorAgent:
                     temperature=0.05,
                 )
             answer = response["choices"][0]["message"]["content"]
-            
         elif self.backend == "gpt3.5":
             messages = [
                 {"role": "system", "content": self.system_prompt()},
@@ -256,12 +297,26 @@ class DoctorAgent:
                     temperature=0.05,
                 )
             answer = response["choices"][0]["message"]["content"]
-            
         elif self.backend == "gpt4o":
-            messages = [
-                {"role": "system", "content": self.system_prompt()},
-                {"role": "user", "content": "\nHere is a history of your dialogue: " + self.agent_hist + "\n Here was the patient response: " + question + "Now please continue your dialogue\nDoctor: "}
-            ]
+            if image_requested:
+                print("REQ")
+                messages = [
+                    {"role": "system", "content": self.system_prompt()},
+                    {"role": "user", 
+                    "content": [
+                        {"type": "text", "text": "\nHere is a history of your dialogue: " + self.agent_hist + "\n Here was the patient response: " + question + "Now please continue your dialogue\nDoctor: "},
+                        {"type": "image_url",
+                            "image_url": {
+                                "url": "{}".format(self.scenario.image_url),
+                            },
+                        },
+                    ]},
+                ]
+            else:
+                messages = [
+                    {"role": "system", "content": self.system_prompt()},
+                    {"role": "user", "content": "\nHere is a history of your dialogue: " + self.agent_hist + "\n Here was the patient response: " + question + "Now please continue your dialogue\nDoctor: "}
+                ]
             response = openai.ChatCompletion.create(
                     model="gpt-4o",
                     messages=messages,
@@ -293,6 +348,31 @@ class DoctorAgent:
             if self.pipe is None:
                 self.pipe = load_huggingface_model(self.backend.replace("HF_", ""))
             answer = inference_huggingface(input_text, self.pipe)
+        elif self.backend == "gpt-4-vision-preview":
+            if image_requested:
+                messages = [
+                    {"role": "system", "content": self.system_prompt()},
+                    {"role": "user", 
+                    "content": [
+                        {"type": "text", "text": "\nHere is a history of your dialogue: " + self.agent_hist + "\n Here was the patient response: " + question + "Now please continue your dialogue\nDoctor: "},
+                        {"type": "image_url",
+                            "image_url": {
+                                "url": "{}".format(self.scenario.image_url),
+                            },
+                        },
+                    ]},
+                ]
+            else:
+                messages = [
+                    {"role": "system", "content": self.system_prompt()},
+                    {"role": "user", "content": "\nHere is a history of your dialogue: " + self.agent_hist + "\n Here was the patient response: " + question + "Now please continue your dialogue\nDoctor: "}
+                ]
+            response = openai.ChatCompletion.create(
+                    model="gpt-4-vision-preview",
+                    messages=messages,
+                    temperature=0.05,
+                )
+            answer = response["choices"][0]["message"]["content"]
         else:
             raise Exception("No model by the name {}".format(self.backend))
         
@@ -304,7 +384,7 @@ class DoctorAgent:
         bias_prompt = ""
         if self.bias_present is not None:
             bias_prompt = self.generate_bias()
-        base = "You are a doctor named Dr. Agent who only responds in the form of dialogue. You are inspecting a patient who you will ask questions in order to understand their disease. You are only allowed to ask {} questions total before you must make a decision. You have asked {} questions so far. You can request test results using the format \"REQUEST TEST: [test]\". For example, \"REQUEST TEST: Chest_X-Ray\". Your dialogue will only be 1-3 sentences in length. Once you have decided to make a diagnosis please type \"DIAGNOSIS READY: [diagnosis here]\"".format(self.MAX_INFS, self.infs)
+        base = "You are a doctor named Dr. Agent who only responds in the form of dialogue. You are inspecting a patient who you will ask questions in order to understand their disease. You are only allowed to ask {} questions total before you must make a decision. You have asked {} questions so far. You can request test results using the format \"REQUEST TEST: [test]\". For example, \"REQUEST TEST: Chest_X-Ray\". Your dialogue will only be 1-3 sentences in length. Once you have decided to make a diagnosis please type \"DIAGNOSIS READY: [diagnosis here]\"".format(self.MAX_INFS, self.infs) + ("You may also request medical images related to the disease to be returned with \"REQUEST IMAGES\"." if self.img_request else "")
         presentation = "\n\nBelow is all of the information you have. {}. \n\n Remember, you must discover their disease by asking them questions. You are also able to provide exams.".format(self.presentation)
         return base + bias_prompt + presentation
     
@@ -383,15 +463,20 @@ def compare_results(diagnosis, correct_diagnosis, moderator_llm, mod_pipe):
     return answer.lower()
 
 
-def main(api_key, replicate_api_key, inf_type, doctor_bias, patient_bias, doctor_llm, patient_llm, measurement_llm, moderator_llm, num_scenarios):
+def main(api_key, replicate_api_key, inf_type, doctor_bias, patient_bias, doctor_llm, patient_llm, measurement_llm, moderator_llm, num_scenarios, dataset, img_request, total_inferences):
     openai.api_key = api_key
     if patient_llm == "mixtral-8x7b" or doctor_llm in ["llama-2-70b-chat", "mixtral-8x7b"]:
         os.environ["REPLICATE_API_TOKEN"] = replicate_api_key
 
-    scenario_loader = ScenarioLoader()
+    # Load MedQA or NEJM agent case scenarios
+    if dataset == "MedQA":
+        scenario_loader = ScenarioLoaderMedQA()
+    elif dataset == "NEJM":
+        scenario_loader = ScenarioLoaderNEJM()
     total_correct = 0
     total_presents = 0
 
+    # Pipeline for huggingface models
     if "HF_" in moderator_llm:
         pipe = load_huggingface_model(moderator_llm.replace("HF_", ""))
     else:
@@ -400,7 +485,9 @@ def main(api_key, replicate_api_key, inf_type, doctor_bias, patient_bias, doctor
     for _scenario_id in range(0, min(num_scenarios, scenario_loader.num_scenarios)):
         total_presents += 1
         pi_dialogue = str()
+        # Initialize scenarios (MedQA/NEJM)
         scenario =  scenario_loader.get_scenario(id=_scenario_id)
+        # Initialize agents
         meas_agent = MeasurementAgent(
             scenario=scenario,
             backend_str=measurement_llm)
@@ -412,26 +499,39 @@ def main(api_key, replicate_api_key, inf_type, doctor_bias, patient_bias, doctor
             scenario=scenario, 
             bias_present=doctor_bias,
             backend_str=doctor_llm,
-            max_infs=20)
+            max_infs=total_inferences, 
+            img_request=img_request)
 
-        for _inf_id in range(20):
+        doctor_dialogue = ""
+        for _inf_id in range(total_inferences):
+            # Check for medical image request
+            if dataset == "NEJM":
+                if img_request:
+                    imgs = "REQUEST IMAGES" in doctor_dialogue
+                else: imgs = True
+            else: imgs = False
+            # Check if final inference
+            if _inf_id == total_inferences - 1:
+                pi_dialogue += "This is the final question. Please provide a diagnosis.\n"
+            # Obtain doctor dialogue (human or llm agent)
             if inf_type == "human_doctor":
                 doctor_dialogue = input("\nQuestion for patient: ")
             else: 
-                doctor_dialogue = doctor_agent.inference_doctor(pi_dialogue)
+                doctor_dialogue = doctor_agent.inference_doctor(pi_dialogue, image_requested=imgs)
             print("Doctor [{}%]:".format(int(((_inf_id+1)/20)*100)), doctor_dialogue)
-
+            # Doctor has arrived at a diagnosis, check correctness
             if "DIAGNOSIS READY" in doctor_dialogue:
                 correctness = compare_results(doctor_dialogue, scenario.diagnosis_information(), moderator_llm, pipe) == "yes"
                 if correctness: total_correct += 1
                 print("\nCorrect answer:", scenario.diagnosis_information())
                 print("Scene {}, The diagnosis was ".format(_scenario_id), "CORRECT" if correctness else "INCORRECT", int((total_correct/total_presents)*100))
                 break
-
+            # Obtain medical exam from measurement reader
             if "REQUEST TEST" in doctor_dialogue:
                 pi_dialogue = meas_agent.inference_measurement(doctor_dialogue,)
                 print("Measurement [{}%]:".format(int(((_inf_id+1)/20)*100)), pi_dialogue)
                 patient_agent.add_hist(pi_dialogue)
+            # Obtain response from patient
             else:
                 if inf_type == "human_patient":
                     pi_dialogue = input("\nResponse to doctor: ")
@@ -441,6 +541,7 @@ def main(api_key, replicate_api_key, inf_type, doctor_bias, patient_bias, doctor
                 meas_agent.add_hist(pi_dialogue)
             # Prevent API timeouts
             time.sleep(1.0)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Medical Diagnosis Simulation CLI')
@@ -453,8 +554,11 @@ if __name__ == "__main__":
     parser.add_argument('--patient_llm', type=str, default='gpt4')
     parser.add_argument('--measurement_llm', type=str, default='gpt4')
     parser.add_argument('--moderator_llm', type=str, default='gpt4')
-    parser.add_argument('--num_scenarios', type=int, default=1, required=False, help='Number of scenarios to simulate')
+    parser.add_argument('--agent_dataset', type=str, default='NEJM') # MedQA or NEJM
+    parser.add_argument('--doctor_image_request', type=bool, default=True) # whether images must be requested or are provided
+    parser.add_argument('--num_scenarios', type=int, default=15, required=False, help='Number of scenarios to simulate')
+    parser.add_argument('--total_inferences', type=int, default=20, required=False, help='Number of inferences between patient and doctor')
+    
     args = parser.parse_args()
 
-    main(args.openai_api_key, args.replicate_api_key, args.inf_type, args.doctor_bias, args.patient_bias, args.doctor_llm, args.patient_llm, args.measurement_llm, args.moderator_llm, args.num_scenarios)
-
+    main(args.openai_api_key, args.replicate_api_key, args.inf_type, args.doctor_bias, args.patient_bias, args.doctor_llm, args.patient_llm, args.measurement_llm, args.moderator_llm, args.num_scenarios, args.agent_dataset, args.doctor_image_request, args.total_inferences)
