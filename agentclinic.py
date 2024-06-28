@@ -554,8 +554,8 @@ if __name__ == "__main__":
     parser.add_argument('--patient_llm', type=str, default='gpt4')
     parser.add_argument('--measurement_llm', type=str, default='gpt4')
     parser.add_argument('--moderator_llm', type=str, default='gpt4')
-    parser.add_argument('--agent_dataset', type=str, default='NEJM') # MedQA or NEJM
-    parser.add_argument('--doctor_image_request', type=bool, default=True) # whether images must be requested or are provided
+    parser.add_argument('--agent_dataset', type=str, default='MedQA') # MedQA or NEJM
+    parser.add_argument('--doctor_image_request', type=bool, default=False) # whether images must be requested or are provided
     parser.add_argument('--num_scenarios', type=int, default=15, required=False, help='Number of scenarios to simulate')
     parser.add_argument('--total_inferences', type=int, default=20, required=False, help='Number of inferences between patient and doctor')
     
