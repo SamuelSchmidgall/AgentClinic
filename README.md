@@ -42,6 +42,9 @@ parser.add_argument('--patient_llm', type=str, default='gpt4', choices=['gpt4', 
 parser.add_argument('--measurement_llm', type=str, default='gpt4', choices=['gpt4'])
 parser.add_argument('--moderator_llm', type=str, default='gpt4', choices=['gpt4'])
 parser.add_argument('--num_scenarios', type=int, default=1, required=False, help='Number of scenarios to simulate')
+parser.add_argument('--agent_dataset', type=str, default='MedQA')
+parser.add_argument('--doctor_image_request', type=bool, default=False)
+parser.add_argument('--total_inferences', type=int, default=20, required=False, help='Number of inferences between patient and doctor')
 ```
 
 
@@ -64,15 +67,21 @@ python3 agentclinic.py --inf_type "llm" --inf_type "llm" --patient_llm "HF_mistr
 🔥 Here is an example with gpt-4o!
 
 ```
-python3 agentclinic.py --openai_api_key "YOUR_OPENAIAPI_KEY" --doctor_llm "gpt4o" --patient_llm "gpt4o" --inf_type "llm"
+python3 agentclinic.py --openai_api_key "YOUR_OPENAIAPI_KEY" --doctor_llm gpt4o --patient_llm gpt4o --inf_type llm
 ```
 
 ⚖️ Here is an example with doctor and patient bias with gpt-3.5!
 
 ```
-python3 agentclinic.py --openai_api_key "YOUR_OPENAIAPI_KEY" --doctor_llm "gpt3.5" --patient_llm "gpt4" --patient_bias "self_diagnosis" --doctor_bias "recency" --inf_type "llm"
+python3 agentclinic.py --openai_api_key "YOUR_OPENAIAPI_KEY" --doctor_llm gpt3.5 --patient_llm gpt4 --patient_bias self_diagnosis --doctor_bias recency --inf_type llm
 ```
 
+
+🩻 Here is an example with gpt-4o on the NEJM reports
+
+```
+python3 agentclinic.py --openai_api_key "YOUR_OPENAIAPI_KEY" --doctor_llm gpt4o --patient_llm gpt4o --inf_type llm --agent_dataset NEJM --doctor_image_request True
+```
 
 
 <p align="center">
