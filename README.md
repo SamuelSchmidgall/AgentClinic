@@ -58,11 +58,6 @@ python3 agentclinic.py --openai_api_key "YOUR_OPENAIAPI_KEY" --inf_type "llm"
 
 🤗 You can also try ANY custom HuggingFace language model very simply! All you have to do is pass "HF_{hf_path}" where hf_path is the HuggingFace path (e.g. mistralai/Mixtral-8x7B-v0.1). Here is how you can run Mixtral-8x7B locally with AgentClinic for both doctor and patient agents. 🤗
 
-⚠️ Can be quite slow ⚠️
-
-```
-python3 agentclinic.py --inf_type "llm" --inf_type "llm" --patient_llm "HF_mistralai/Mixtral-8x7B-v0.1"  --moderator_llm "HF_mistralai/Mixtral-8x7B-v0.1"  --doctor_llm "HF_mistralai/Mixtral-8x7B-v0.1"  --measurement_llm "HF_mistralai/Mixtral-8x7B-v0.1"
-```
 
 🔥 Here is an example with gpt-4o!
 
@@ -83,6 +78,11 @@ python3 agentclinic.py --openai_api_key "YOUR_OPENAIAPI_KEY" --doctor_llm gpt3.5
 python3 agentclinic.py --openai_api_key "YOUR_OPENAIAPI_KEY" --doctor_llm gpt4o --patient_llm gpt4o --inf_type llm --agent_dataset NEJM --doctor_image_request True
 ```
 
+⚠️ Can be quite slow ⚠️
+
+```
+python3 agentclinic.py --inf_type "llm" --inf_type "llm" --patient_llm "HF_mistralai/Mixtral-8x7B-v0.1"  --moderator_llm "HF_mistralai/Mixtral-8x7B-v0.1"  --doctor_llm "HF_mistralai/Mixtral-8x7B-v0.1"  --measurement_llm "HF_mistralai/Mixtral-8x7B-v0.1"
+```
 
 <p align="center">
   <img src="media/perfplots.png" alt="Demonstration of the flow of AgentClinic" style="width: 99%;">
