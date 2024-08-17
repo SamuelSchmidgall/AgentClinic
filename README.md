@@ -5,6 +5,13 @@
 </p>
 
 ## Release
+- [08/17/2024] 🎆 Major updates 🎇
+  - 🏥 A new suite of cases (**AgentClinic-MIMIC-IV**), based on real clinical cases from MIMIC-IV! 
+  - More AgentClinic-MedQA cases [107] → [215] 
+  - More AgentClinic-NEJM cases [15] → [120] 
+  - 💼 Tutorials on building your own AgentClinic cases!
+  - Support for three new models--☀️ Anthropic's Claude 3.5 Sonnet, 📗 OpenAI's GPT 4o-mini, and 🦙 Llama 3 70B
+
 - [06/28/2024] 🩻 We added support for vision models and the NEJM case questions
 - [05/18/2024] 🤗 We added support for HuggingFace models!
 - [05/17/2024] We release new results and support for GPT-4o!

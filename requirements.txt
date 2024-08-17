@@ -3,3 +3,5 @@ openai==0.28.0
 replicate==0.23.1
 argparse
 transformers
+datasets
+anthropic
