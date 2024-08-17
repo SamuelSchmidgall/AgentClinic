@@ -6,7 +6,7 @@
 
 ## Release
 - [08/17/2024] 🎆 Major updates 🎇
-  - 🏥 A new suite of cases (**AgentClinic-MIMIC-IV**), based on real clinical cases from MIMIC-IV! 
+  - 🏥 A new suite of cases (**AgentClinic-MIMIC-IV**), based on real clinical cases from MIMIC-IV (requires approval from https://physionet.org/content/mimiciv/2.2/)! 
   - More AgentClinic-MedQA cases [107] → [215] 
   - More AgentClinic-NEJM cases [15] → [120] 
   - 💼 Tutorials on building your own AgentClinic cases!
