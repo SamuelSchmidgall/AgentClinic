@@ -5,6 +5,7 @@
 </p>
 
 ## Release
+- [09/13/2024] 🍓 We release new results and support for o1!
 - [08/17/2024] 🎆 Major updates 🎇
   - 🏥 A new suite of cases (**AgentClinic-MIMIC-IV**), based on real clinical cases from MIMIC-IV (requires approval from https://physionet.org/content/mimiciv/2.2/)! 
   - More AgentClinic-MedQA cases [107] → [215] 
