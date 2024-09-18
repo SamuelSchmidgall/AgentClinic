@@ -634,7 +634,7 @@ def main(api_key, replicate_api_key, inf_type, doctor_bias, patient_bias, doctor
                 doctor_dialogue = input("\nQuestion for patient: ")
             else: 
                 doctor_dialogue = doctor_agent.inference_doctor(pi_dialogue, image_requested=imgs)
-            print("Doctor [{}%]:".format(int(((_inf_id+1)/20)*100)), doctor_dialogue)
+            print("Doctor [{}%]:".format(int(((_inf_id+1)/total_inferences)*100)), doctor_dialogue)
             # Doctor has arrived at a diagnosis, check correctness
             if "DIAGNOSIS READY" in doctor_dialogue:
                 correctness = compare_results(doctor_dialogue, scenario.diagnosis_information(), moderator_llm, pipe) == "yes"
@@ -645,7 +645,7 @@ def main(api_key, replicate_api_key, inf_type, doctor_bias, patient_bias, doctor
             # Obtain medical exam from measurement reader
             if "REQUEST TEST" in doctor_dialogue:
                 pi_dialogue = meas_agent.inference_measurement(doctor_dialogue,)
-                print("Measurement [{}%]:".format(int(((_inf_id+1)/20)*100)), pi_dialogue)
+                print("Measurement [{}%]:".format(int(((_inf_id+1)/total_inferences)*100)), pi_dialogue)
                 patient_agent.add_hist(pi_dialogue)
             # Obtain response from patient
             else:
@@ -653,7 +653,7 @@ def main(api_key, replicate_api_key, inf_type, doctor_bias, patient_bias, doctor
                     pi_dialogue = input("\nResponse to doctor: ")
                 else:
                     pi_dialogue = patient_agent.inference_patient(doctor_dialogue)
-                print("Patient [{}%]:".format(int(((_inf_id+1)/20)*100)), pi_dialogue)
+                print("Patient [{}%]:".format(int(((_inf_id+1)/total_inferences)*100)), pi_dialogue)
                 meas_agent.add_hist(pi_dialogue)
             # Prevent API timeouts
             time.sleep(1.0)
