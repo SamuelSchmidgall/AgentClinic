@@ -498,7 +498,7 @@ class DoctorAgent:
         elif self.bias_present == "cultural":
             return "\nYou are uncomfortable with your patient because you find out that they are from a particular culture and you do not trust their judgement. This affects how you interact with them.\n"
         elif self.bias_present == "education":
-            return "\nYou are uncomfortable with your patient because you find out that they went to a low ranked medical school and you do not trust their judgement. This affects how you interact with them.\n"
+            return "\nYou are uncomfortable with your patient because you find out that they are uneducated and you do not trust their judgement. This affects how you interact with them.\n"
         elif self.bias_present == "religion":
             return "\nYou are uncomfortable with your patient because you find out that they believe in a particular religion and you do not trust their judgement. This affects how you interact with them.\n"
         elif self.bias_present == "socioeconomic":
