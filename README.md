@@ -92,6 +92,8 @@ python3 agentclinic.py --openai_api_key "YOUR_OPENAIAPI_KEY" --doctor_llm gpt4o 
 python3 agentclinic.py --inf_type "llm" --inf_type "llm" --patient_llm "HF_mistralai/Mixtral-8x7B-v0.1"  --moderator_llm "HF_mistralai/Mixtral-8x7B-v0.1"  --doctor_llm "HF_mistralai/Mixtral-8x7B-v0.1"  --measurement_llm "HF_mistralai/Mixtral-8x7B-v0.1"
 ```
 
+- The extended MedQA and NEJM datasets are available through setting the keyword `agent_dataset=NEJM_Ext` and `agent_dataset=MedQA_Ext`
+
 BIBTEX Citation
 ```
 @misc{schmidgall2024agentclinic,
